@@ -822,3 +822,53 @@ func Test_SetSymbols(t *testing.T) {
 	}
 
 }
+
+func TestTable_MergeRepeats(t *testing.T) {
+	type fields struct {
+		autoMerge bool
+	}
+	tests := []struct {
+		name          string
+		fields        fields
+		wantAutoMerge bool
+	}{
+		{"pass", fields{autoMerge: false}, true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tbl := &Table{
+				autoMerge: tt.fields.autoMerge,
+			}
+			tbl.MergeRepeats()
+
+			if tbl.autoMerge != tt.wantAutoMerge {
+				t.Errorf("Table.MergeRepeats().autoMerge -> %v, want %v", tbl.autoMerge, tt.wantAutoMerge)
+			}
+		})
+	}
+}
+
+func TestTable_TruncateCells(t *testing.T) {
+	type fields struct {
+		autoMerge bool
+	}
+	tests := []struct {
+		name         string
+		fields       fields
+		wantTruncate bool
+	}{
+		{"pass", fields{autoMerge: false}, true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tbl := &Table{
+				autoMerge: tt.fields.autoMerge,
+			}
+			tbl.TruncateWideCells()
+
+			if tbl.truncateCells != tt.wantTruncate {
+				t.Errorf("Table.TruncateWideCells().truncateCells -> %v, want %v", tbl.truncateCells, tt.wantTruncate)
+			}
+		})
+	}
+}

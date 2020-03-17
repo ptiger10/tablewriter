@@ -71,6 +71,16 @@ func (tbl *Table) AppendRows(rows [][]string) error {
 	return nil
 }
 
+// MergeRepeats merges all repeated values in a column together.
+func (tbl *Table) MergeRepeats() {
+	tbl.autoMerge = true
+}
+
+// TruncateWideCells handles overly wide cells by truncating them (default: wrap cell remainder onto new one or more new lines).
+func (tbl *Table) TruncateWideCells() {
+	tbl.truncateCells = true
+}
+
 // creates a stringified representation of content rows and dividing rows
 func (tbl *Table) render() (string, error) {
 	if len(tbl.rows) == 0 {
