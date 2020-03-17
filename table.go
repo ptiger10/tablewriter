@@ -10,14 +10,14 @@ import (
 // NewTable creates a default table writing to `w`.
 func NewTable(w io.Writer) *Table {
 	return &Table{
-		w:              w,
-		rows:           [][]string{},
-		alignment:      AlignCenter,
-		separateLabels: false,
-		numHeaderRows:  0,
-		numLabelLevels: 0,
-		autoMerge:      false,
-		truncateCells:  false,
+		w:                 w,
+		rows:              [][]string{},
+		alignment:         AlignCenter,
+		numHeaderRows:     0,
+		numLabelLevels:    0,
+		autoMerge:         false,
+		truncateCells:     false,
+		autoCenterHeaders: true,
 	}
 }
 
@@ -71,6 +71,11 @@ func (tbl *Table) AppendRows(rows [][]string) error {
 	return nil
 }
 
+// DisableHeaderAutoCentering causes header cells to be aligned based on the underlying table alignment (default: headers are auto-centered).
+func (tbl *Table) DisableHeaderAutoCentering() {
+	tbl.autoCenterHeaders = false
+}
+
 // MergeRepeats merges all repeated values in a column together.
 func (tbl *Table) MergeRepeats() {
 	tbl.autoMerge = true
@@ -97,31 +102,33 @@ func (tbl *Table) render() (string, error) {
 		return "", fmt.Errorf("table must have at least 1 row")
 	}
 	colWidths := tbl.resizeColWidths()
-	dividingBorder := stringifyDividingRow(colWidths, tbl.numLabelLevels)
+	borderLine := stringifyDividingRow(colWidths, tbl.numLabelLevels, false)
+	headerLine := stringifyDividingRow(colWidths, tbl.numLabelLevels, true)
 
 	var ret string
 	var priorRow []string
 	for i := range tbl.rows {
-		// write a dividingBorder at the top and two after the last header row
+		// write a borderLine at the top and a headerLine after the last header row
 		if i == 0 {
-			ret += dividingBorder
+			ret += borderLine
 		} else if i == tbl.numHeaderRows {
-			ret += repeat(dividingBorder, 2)
+			ret += headerLine
 		}
 		// copy row to avoid changing original in calls to autoMergeRows and stringifyContentRow
 		rowCopy := make([]string, len(tbl.rows[i]))
 		copy(rowCopy, tbl.rows[i])
 		if tbl.autoMerge {
-			// auto-merge does not apply to headers and values
+			// auto-merge applies only to non-header rows
 			if i == tbl.numHeaderRows+1 {
 				priorRow = tbl.rows[tbl.numHeaderRows]
 			}
 			autoMergeRows(priorRow, rowCopy)
 		}
-		ret += tbl.stringifyContentRow(colWidths, rowCopy)
+		isHeader := i < tbl.numHeaderRows
+		ret += tbl.stringifyContentRow(colWidths, rowCopy, isHeader)
 	}
-	// write a dividingBorder at the bottom
-	ret += dividingBorder
+	// write a borderLine at the bottom
+	ret += borderLine
 	return ret, nil
 }
 
@@ -190,12 +197,18 @@ func repeat(s string, n int) string {
 }
 
 // [3,3] -> +---+---+
-func stringifyDividingRow(colWidths []int, numLabelLevels int) string {
+func stringifyDividingRow(colWidths []int, numLabelLevels int, header bool) string {
 	// leftmost edge
 	ret := dividingEdge
+
+	// set filler value
+	filler := borderFiller
+	if header {
+		filler = headerFiller
+	}
 	for k := range colWidths {
 		// sets the number of filler symbols per column, plus a 1-space buffer on either end
-		ret += repeat(dividingFiller, 1+colWidths[k]+1)
+		ret += repeat(filler, 1+colWidths[k]+1)
 		if k < numLabelLevels {
 			ret += dividingLabelEdge
 		} else {
@@ -248,7 +261,7 @@ func wrap(s string, maxWidth int) (firstLine string, remainder string) {
 
 // handle overly-wide columns by either wrapping or truncating.
 // if wrapping, writes multiple lines per row.
-func (tbl *Table) stringifyContentRow(colWidths []int, content []string) (ret string) {
+func (tbl *Table) stringifyContentRow(colWidths []int, content []string, header bool) (ret string) {
 	// loop until there are no remaining wrapped lines to print
 	for {
 		var moreWrappedLines bool
@@ -274,8 +287,13 @@ func (tbl *Table) stringifyContentRow(colWidths []int, content []string) (ret st
 					content[k] = firstLine
 				}
 			}
-			// justify text content
-			ret += alignString(content[k], colWidths[k], tbl.alignment)
+			// Center the content in header rows. Use Table alignment (default: Center) for non-header rows.
+			alignment := tbl.alignment
+			if header && tbl.autoCenterHeaders {
+				alignment = AlignCenter
+			}
+			// align text content
+			ret += alignString(content[k], colWidths[k], alignment)
 			// add separator after column, including at rightmost edge
 			if k < tbl.numLabelLevels {
 				ret += labelEdge

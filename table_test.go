@@ -11,11 +11,7 @@ import (
 
 // de-couple tests from global variables
 func TestMain(m *testing.M) {
-	dividingEdge = "+"
-	dividingLabelEdge = "++"
-	dividingFiller = "-"
-	contentEdge = "|"
-	labelEdge = "||"
+	resetDefaults()
 
 	exitCode := m.Run()
 	os.Exit(exitCode)
@@ -23,14 +19,14 @@ func TestMain(m *testing.M) {
 
 func TestTable_render(t *testing.T) {
 	type fields struct {
-		w              io.Writer
-		rows           [][]string
-		alignment      Alignment
-		separateLabels bool
-		numHeaderRows  int
-		numLabelLevels int
-		autoMerge      bool
-		truncateCells  bool
+		w                 io.Writer
+		rows              [][]string
+		alignment         Alignment
+		numHeaderRows     int
+		numLabelLevels    int
+		autoCenterHeaders bool
+		autoMerge         bool
+		truncateCells     bool
 	}
 	tests := []struct {
 		name    string
@@ -40,11 +36,12 @@ func TestTable_render(t *testing.T) {
 	}{
 		{"no labels - no header - auto merge",
 			fields{
-				rows:           [][]string{{"foo", "bar"}, {"foo", "quux"}, {"baz", "quux"}},
-				alignment:      AlignLeft,
-				numHeaderRows:  0,
-				numLabelLevels: 0,
-				autoMerge:      true},
+				rows:              [][]string{{"foo", "bar"}, {"foo", "quux"}, {"baz", "quux"}},
+				alignment:         AlignLeft,
+				numHeaderRows:     0,
+				numLabelLevels:    0,
+				autoCenterHeaders: true,
+				autoMerge:         true},
 			"" +
 				"+-----+------+\n" +
 				"| foo | bar  |\n" +
@@ -55,15 +52,15 @@ func TestTable_render(t *testing.T) {
 		},
 		{"no labels - 1 header - no auto merge",
 			fields{
-				rows:           [][]string{{"foo", "bar"}, {"corge", "quux"}, {"baz", "fred"}},
-				alignment:      AlignLeft,
-				numHeaderRows:  1,
-				numLabelLevels: 0},
+				rows:              [][]string{{"foo", "bar"}, {"corge", "quux"}, {"baz", "fred"}},
+				alignment:         AlignLeft,
+				autoCenterHeaders: true,
+				numHeaderRows:     1,
+				numLabelLevels:    0},
 			"" +
 				"+-------+------+\n" +
-				"| foo   | bar  |\n" +
-				"+-------+------+\n" +
-				"+-------+------+\n" +
+				"|  foo  | bar  |\n" +
+				"+=======+======+\n" +
 				"| corge | quux |\n" +
 				"| baz   | fred |\n" +
 				"+-------+------+\n",
@@ -85,15 +82,15 @@ func TestTable_render(t *testing.T) {
 		},
 		{"labels & header - no auto merge",
 			fields{
-				rows:           [][]string{{"foo", "bar"}, {"corge", "quux"}, {"baz", "fred"}},
-				alignment:      AlignLeft,
-				numHeaderRows:  1,
-				numLabelLevels: 1},
+				rows:              [][]string{{"foo", "bar"}, {"corge", "quux"}, {"baz", "fred"}},
+				alignment:         AlignLeft,
+				autoCenterHeaders: true,
+				numHeaderRows:     1,
+				numLabelLevels:    1},
 			"" +
 				"+-------++------+\n" +
-				"| foo   || bar  |\n" +
-				"+-------++------+\n" +
-				"+-------++------+\n" +
+				"|  foo  || bar  |\n" +
+				"+=======++======+\n" +
 				"| corge || quux |\n" +
 				"| baz   || fred |\n" +
 				"+-------++------+\n",
@@ -112,14 +109,14 @@ func TestTable_render(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tbl := &Table{
-				w:              tt.fields.w,
-				rows:           tt.fields.rows,
-				alignment:      tt.fields.alignment,
-				separateLabels: tt.fields.separateLabels,
-				numHeaderRows:  tt.fields.numHeaderRows,
-				numLabelLevels: tt.fields.numLabelLevels,
-				autoMerge:      tt.fields.autoMerge,
-				truncateCells:  tt.fields.truncateCells,
+				w:                 tt.fields.w,
+				rows:              tt.fields.rows,
+				alignment:         tt.fields.alignment,
+				numHeaderRows:     tt.fields.numHeaderRows,
+				numLabelLevels:    tt.fields.numLabelLevels,
+				autoCenterHeaders: tt.fields.autoCenterHeaders,
+				autoMerge:         tt.fields.autoMerge,
+				truncateCells:     tt.fields.truncateCells,
 			}
 			got, err := tbl.render()
 			if (err != nil) != tt.wantErr {
@@ -144,7 +141,6 @@ func TestTable_Render(t *testing.T) {
 	type fields struct {
 		w              io.Writer
 		rows           [][]string
-		separateLabels bool
 		numHeaderRows  int
 		numLabelLevels int
 		autoMerge      bool
@@ -191,7 +187,6 @@ func TestTable_Render(t *testing.T) {
 			tbl := &Table{
 				w:              tt.fields.w,
 				rows:           tt.fields.rows,
-				separateLabels: tt.fields.separateLabels,
 				numHeaderRows:  tt.fields.numHeaderRows,
 				numLabelLevels: tt.fields.numLabelLevels,
 				autoMerge:      tt.fields.autoMerge,
@@ -210,7 +205,6 @@ func TestTable_resizeColWidths(t *testing.T) {
 	type fields struct {
 		w              io.Writer
 		rows           [][]string
-		separateLabels bool
 		numHeaderRows  int
 		numLabelLevels int
 		autoMerge      bool
@@ -248,7 +242,6 @@ func TestTable_resizeColWidths(t *testing.T) {
 			tbl := &Table{
 				w:              tt.fields.w,
 				rows:           tt.fields.rows,
-				separateLabels: tt.fields.separateLabels,
 				numHeaderRows:  tt.fields.numHeaderRows,
 				numLabelLevels: tt.fields.numLabelLevels,
 				autoMerge:      tt.fields.autoMerge,
@@ -357,6 +350,7 @@ func Test_stringifyDividingRow(t *testing.T) {
 	type args struct {
 		columnWidths   []int
 		numLabelLevels int
+		header         bool
 	}
 	tests := []struct {
 		name string
@@ -364,19 +358,24 @@ func Test_stringifyDividingRow(t *testing.T) {
 		want string
 	}{
 		{
-			"no label levels",
-			args{[]int{1, 3, 1}, 0},
+			"no label levels - not header",
+			args{[]int{1, 3, 1}, 0, false},
 			"+---+-----+---+\n",
 		},
 		{
-			"1 label level",
-			args{[]int{1, 3, 1}, 1},
+			"no label levels - header",
+			args{[]int{1, 3, 1}, 0, true},
+			"+===+=====+===+\n",
+		},
+		{
+			"1 label level - not header",
+			args{[]int{1, 3, 1}, 1, false},
 			"+---++-----+---+\n",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := stringifyDividingRow(tt.args.columnWidths, tt.args.numLabelLevels); got != tt.want {
+			if got := stringifyDividingRow(tt.args.columnWidths, tt.args.numLabelLevels, tt.args.header); got != tt.want {
 				t.Errorf("stringifyDividingRow() = %v, want %v", got, tt.want)
 			}
 		})
@@ -385,18 +384,18 @@ func Test_stringifyDividingRow(t *testing.T) {
 
 func TestTable_stringifyContentRow(t *testing.T) {
 	type fields struct {
-		w              io.Writer
-		rows           [][]string
-		alignment      Alignment
-		separateLabels bool
-		numHeaderRows  int
-		numLabelLevels int
-		autoMerge      bool
-		truncateCells  bool
+		w                 io.Writer
+		rows              [][]string
+		alignment         Alignment
+		numLabelLevels    int
+		autoCenterHeaders bool
+		autoMerge         bool
+		truncateCells     bool
 	}
 	type args struct {
 		colWidths []int
 		content   []string
+		isHeader  bool
 	}
 	tests := []struct {
 		name    string
@@ -404,54 +403,63 @@ func TestTable_stringifyContentRow(t *testing.T) {
 		args    args
 		wantRet string
 	}{
-		{"no labels - all rows 1 line",
+		// NB: all content has 1-space buffer on either side that extends beyond the max width
+		{"no labels - all rows 1 line - not header (use alignment)",
 			fields{
 				rows:           [][]string{{"foo", "bar"}, {"baz", "qux"}},
-				alignment:      AlignCenter,
-				numHeaderRows:  0,
+				alignment:      AlignLeft,
 				numLabelLevels: 0,
 				truncateCells:  false},
 			args{
-				[]int{3, 3}, []string{"foo", "bar"},
+				[]int{5, 5}, []string{"foo", "bar"}, false,
 			},
-			"| foo | bar |\n",
+			"| foo   | bar   |\n",
 		},
-		{"no labels - wrap & split to newline",
+		{"no labels - all rows 1 line - header (ignore alignment)",
+			fields{
+				rows:              [][]string{{"foo", "bar"}, {"baz", "qux"}},
+				alignment:         AlignLeft,
+				numLabelLevels:    0,
+				autoCenterHeaders: true,
+				truncateCells:     false},
+			args{
+				[]int{5, 5}, []string{"foo", "bar"}, true,
+			},
+			"|  foo  |  bar  |\n",
+		},
+		{"no labels - wrap & split to newline - not header",
 			fields{
 				rows:           [][]string{{"foo", "bar"}, {"baz", "qux"}},
 				alignment:      AlignCenter,
-				numHeaderRows:  0,
 				numLabelLevels: 0,
 				truncateCells:  false},
 			args{
-				[]int{3, 2}, []string{"foo", "bar"},
+				[]int{3, 2}, []string{"foo", "bar"}, false,
 			},
 			"" +
 				"| foo | b- |\n" +
 				"|     | ar |\n",
 		},
-		{"no labels - truncate",
+		{"no labels - truncate - not header",
 			fields{
 				rows:           [][]string{{"foo", "corge"}, {"baz", "qux"}},
 				alignment:      AlignCenter,
-				numHeaderRows:  0,
 				numLabelLevels: 0,
 				truncateCells:  true},
 			args{
-				[]int{3, 4}, []string{"foo", "corge"},
+				[]int{3, 4}, []string{"foo", "corge"}, false,
 			},
 			"| foo | c... |\n",
 		},
-		{"1 label level - all rows 1 line",
+		{"1 label level - all rows 1 line - not header",
 			fields{
 				rows:           [][]string{{"foo", "bar"}, {"baz", "qux"}},
 				alignment:      AlignCenter,
-				numHeaderRows:  0,
 				numLabelLevels: 1,
 				autoMerge:      false,
 				truncateCells:  false},
 			args{
-				[]int{3, 3}, []string{"foo", "bar"},
+				[]int{3, 3}, []string{"foo", "bar"}, false,
 			},
 			"| foo || bar |\n",
 		},
@@ -459,16 +467,15 @@ func TestTable_stringifyContentRow(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tbl := &Table{
-				w:              tt.fields.w,
-				rows:           tt.fields.rows,
-				alignment:      tt.fields.alignment,
-				separateLabels: tt.fields.separateLabels,
-				numHeaderRows:  tt.fields.numHeaderRows,
-				numLabelLevels: tt.fields.numLabelLevels,
-				autoMerge:      tt.fields.autoMerge,
-				truncateCells:  tt.fields.truncateCells,
+				w:                 tt.fields.w,
+				rows:              tt.fields.rows,
+				alignment:         tt.fields.alignment,
+				numLabelLevels:    tt.fields.numLabelLevels,
+				autoCenterHeaders: tt.fields.autoCenterHeaders,
+				autoMerge:         tt.fields.autoMerge,
+				truncateCells:     tt.fields.truncateCells,
 			}
-			if gotRet := tbl.stringifyContentRow(tt.args.colWidths, tt.args.content); gotRet != tt.wantRet {
+			if gotRet := tbl.stringifyContentRow(tt.args.colWidths, tt.args.content, tt.args.isHeader); gotRet != tt.wantRet {
 				t.Errorf("Table.stringifyContentRow() = %v, want %v", gotRet, tt.wantRet)
 			}
 		})
@@ -512,8 +519,10 @@ func TestNewTable(t *testing.T) {
 	}{
 		{"Pass",
 			&Table{
-				w:    &bytes.Buffer{},
-				rows: [][]string{},
+				// all other fields initialize at their zero-value
+				w:                 &bytes.Buffer{},
+				rows:              [][]string{},
+				autoCenterHeaders: true,
 			},
 			""},
 	}
@@ -535,7 +544,6 @@ func TestTable_sameShape(t *testing.T) {
 		w              io.Writer
 		rows           [][]string
 		alignment      Alignment
-		separateLabels bool
 		numHeaderRows  int
 		numLabelLevels int
 		autoMerge      bool
@@ -572,7 +580,6 @@ func TestTable_sameShape(t *testing.T) {
 				w:              tt.fields.w,
 				rows:           tt.fields.rows,
 				alignment:      tt.fields.alignment,
-				separateLabels: tt.fields.separateLabels,
 				numHeaderRows:  tt.fields.numHeaderRows,
 				numLabelLevels: tt.fields.numLabelLevels,
 				autoMerge:      tt.fields.autoMerge,
@@ -590,7 +597,6 @@ func TestTable_AppendHeaderRow(t *testing.T) {
 		w              io.Writer
 		rows           [][]string
 		alignment      Alignment
-		separateLabels bool
 		numHeaderRows  int
 		numLabelLevels int
 		autoMerge      bool
@@ -659,7 +665,6 @@ func TestTable_AppendHeaderRow(t *testing.T) {
 				w:              tt.fields.w,
 				rows:           tt.fields.rows,
 				alignment:      tt.fields.alignment,
-				separateLabels: tt.fields.separateLabels,
 				numHeaderRows:  tt.fields.numHeaderRows,
 				numLabelLevels: tt.fields.numLabelLevels,
 				autoMerge:      tt.fields.autoMerge,
@@ -684,7 +689,6 @@ func TestTable_AppendRow(t *testing.T) {
 		w              io.Writer
 		rows           [][]string
 		alignment      Alignment
-		separateLabels bool
 		numHeaderRows  int
 		numLabelLevels int
 		autoMerge      bool
@@ -721,7 +725,6 @@ func TestTable_AppendRow(t *testing.T) {
 				w:              tt.fields.w,
 				rows:           tt.fields.rows,
 				alignment:      tt.fields.alignment,
-				separateLabels: tt.fields.separateLabels,
 				numHeaderRows:  tt.fields.numHeaderRows,
 				numLabelLevels: tt.fields.numLabelLevels,
 				autoMerge:      tt.fields.autoMerge,
@@ -742,7 +745,6 @@ func TestTable_AppendRows(t *testing.T) {
 		w              io.Writer
 		rows           [][]string
 		alignment      Alignment
-		separateLabels bool
 		numHeaderRows  int
 		numLabelLevels int
 		autoMerge      bool
@@ -779,7 +781,6 @@ func TestTable_AppendRows(t *testing.T) {
 				w:              tt.fields.w,
 				rows:           tt.fields.rows,
 				alignment:      tt.fields.alignment,
-				separateLabels: tt.fields.separateLabels,
 				numHeaderRows:  tt.fields.numHeaderRows,
 				numLabelLevels: tt.fields.numLabelLevels,
 				autoMerge:      tt.fields.autoMerge,
@@ -793,34 +794,6 @@ func TestTable_AppendRows(t *testing.T) {
 			}
 		})
 	}
-}
-
-func Test_SetSymbols(t *testing.T) {
-	SetDividingEdge("*")
-	if dividingEdge != "*" {
-		t.Errorf("SetDividingEdge() failed")
-	}
-
-	SetDividingLabelEdge("**")
-	if dividingLabelEdge != "**" {
-		t.Errorf("SetDividingLabelEdge() failed")
-	}
-
-	SetDividingFiller("=")
-	if dividingFiller != "=" {
-		t.Errorf("SetDividingFiller() failed")
-	}
-
-	SetContentEdge("%")
-	if contentEdge != "%" {
-		t.Errorf("SetContentEdge() failed")
-	}
-
-	SetLabelEdge("%%")
-	if labelEdge != "%%" {
-		t.Errorf("SetLabelEdge() failed")
-	}
-
 }
 
 func TestTable_MergeRepeats(t *testing.T) {
@@ -843,6 +816,31 @@ func TestTable_MergeRepeats(t *testing.T) {
 
 			if tbl.autoMerge != tt.wantAutoMerge {
 				t.Errorf("Table.MergeRepeats().autoMerge -> %v, want %v", tbl.autoMerge, tt.wantAutoMerge)
+			}
+		})
+	}
+}
+
+func TestTable_DisableHeaderAutoCentering(t *testing.T) {
+	type fields struct {
+		autoCenterHeaders bool
+	}
+	tests := []struct {
+		name                  string
+		fields                fields
+		wantAutoCenterHeaders bool
+	}{
+		{"pass", fields{autoCenterHeaders: true}, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tbl := &Table{
+				autoCenterHeaders: tt.fields.autoCenterHeaders,
+			}
+			tbl.DisableHeaderAutoCentering()
+
+			if tbl.autoMerge != tt.wantAutoCenterHeaders {
+				t.Errorf("Table.DisableHeaderAutoCentering().autoCenterHeaders -> %v, want %v", tbl.autoCenterHeaders, tt.wantAutoCenterHeaders)
 			}
 		})
 	}
@@ -927,6 +925,89 @@ func TestTable_SetLabelLevelCount(t *testing.T) {
 			if tbl.numLabelLevels != tt.wantLevels {
 				t.Errorf("Table.SetLabelLevelCount().numLabelLevels -> %v, want %v", tbl.numLabelLevels, tt.wantLevels)
 			}
+		})
+	}
+}
+
+func TestChangeDefaults(t *testing.T) {
+	type args struct {
+		defaults Defaults
+	}
+	tests := []struct {
+		name         string
+		args         args
+		wantDefaults Defaults
+	}{
+		{"DividingEdge", args{Defaults{DividingEdge: "*"}},
+			Defaults{DividingEdge: "*",
+				DividingLabelEdge: dividingLabelEdge, BorderFiller: borderFiller, HeaderFiller: headerFiller,
+				ContentEdge: contentEdge, LabelEdge: labelEdge, MaxColWidth: maxColWidth,
+			},
+		},
+		{"DividingLabelEdge", args{Defaults{DividingLabelEdge: "**"}},
+			Defaults{DividingLabelEdge: "**",
+				DividingEdge: dividingEdge, BorderFiller: borderFiller, HeaderFiller: headerFiller,
+				ContentEdge: contentEdge, LabelEdge: labelEdge, MaxColWidth: maxColWidth,
+			},
+		},
+		{"BorderFiller", args{Defaults{BorderFiller: "*"}},
+			Defaults{BorderFiller: "*",
+				DividingEdge: dividingEdge, DividingLabelEdge: dividingLabelEdge, HeaderFiller: headerFiller,
+				ContentEdge: contentEdge, LabelEdge: labelEdge, MaxColWidth: maxColWidth,
+			},
+		},
+		{"HeaderFiller", args{Defaults{HeaderFiller: "*"}},
+			Defaults{HeaderFiller: "*",
+				DividingEdge: dividingEdge, DividingLabelEdge: dividingLabelEdge, BorderFiller: borderFiller,
+				ContentEdge: contentEdge, LabelEdge: labelEdge, MaxColWidth: maxColWidth,
+			},
+		},
+		{"ContentEdge", args{Defaults{ContentEdge: "*"}},
+			Defaults{ContentEdge: "*",
+				DividingEdge: dividingEdge, DividingLabelEdge: dividingLabelEdge, HeaderFiller: headerFiller, BorderFiller: borderFiller,
+				LabelEdge: labelEdge, MaxColWidth: maxColWidth,
+			},
+		},
+		{"LabelEdge", args{Defaults{LabelEdge: "**"}},
+			Defaults{LabelEdge: "**",
+				DividingEdge: dividingEdge, DividingLabelEdge: dividingLabelEdge, HeaderFiller: headerFiller, BorderFiller: borderFiller,
+				ContentEdge: contentEdge, MaxColWidth: maxColWidth,
+			},
+		},
+		{"MaxColWidth", args{Defaults{MaxColWidth: 10}},
+			Defaults{MaxColWidth: 10,
+				DividingEdge: dividingEdge, DividingLabelEdge: dividingLabelEdge, HeaderFiller: headerFiller, BorderFiller: borderFiller,
+				ContentEdge: contentEdge, LabelEdge: labelEdge,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ChangeDefaults(tt.args.defaults)
+
+			if dividingEdge != tt.wantDefaults.DividingEdge {
+				t.Errorf("ChangeDefaults() DividingEdge -> %v, want %v", dividingEdge, tt.wantDefaults.DividingEdge)
+			}
+			if dividingLabelEdge != tt.wantDefaults.DividingLabelEdge {
+				t.Errorf("ChangeDefaults() DividingLabelEdge -> %v, want %v", dividingLabelEdge, tt.wantDefaults.DividingLabelEdge)
+			}
+			if borderFiller != tt.wantDefaults.BorderFiller {
+				t.Errorf("ChangeDefaults() BorderFiller -> %v, want %v", borderFiller, tt.wantDefaults.BorderFiller)
+			}
+			if headerFiller != tt.wantDefaults.HeaderFiller {
+				t.Errorf("ChangeDefaults() HeaderFiller -> %v, want %v", headerFiller, tt.wantDefaults.HeaderFiller)
+			}
+			if contentEdge != tt.wantDefaults.ContentEdge {
+				t.Errorf("ChangeDefaults() ContentEdge -> %v, want %v", contentEdge, tt.wantDefaults.ContentEdge)
+			}
+			if labelEdge != tt.wantDefaults.LabelEdge {
+				t.Errorf("ChangeDefaults() LabelEdge -> %v, want %v", labelEdge, tt.wantDefaults.LabelEdge)
+			}
+			if maxColWidth != tt.wantDefaults.MaxColWidth {
+				t.Errorf("ChangeDefaults() MaxColWidth -> %v, want %v", maxColWidth, tt.wantDefaults.MaxColWidth)
+			}
+
+			resetDefaults()
 		})
 	}
 }
