@@ -1,10 +1,3 @@
-// Package tablewriter provides a basic ASCII table writer for string slices
-// with customization options for:
-// headers,
-// label columns,
-// cell alignment,
-// handling overly-wide cells (truncate vs wrap),
-// and auto-merging repeat values in the same column.
 package tablewriter
 
 import (
