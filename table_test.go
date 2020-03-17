@@ -901,3 +901,32 @@ func TestTable_SetAlignment(t *testing.T) {
 		})
 	}
 }
+
+func TestTable_SetLabelLevelCount(t *testing.T) {
+	type fields struct {
+		numLabelLevels int
+	}
+	type args struct {
+		n int
+	}
+	tests := []struct {
+		name       string
+		fields     fields
+		args       args
+		wantLevels int
+	}{
+		{"pass", fields{numLabelLevels: 0}, args{1}, 1},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tbl := &Table{
+				numLabelLevels: tt.fields.numLabelLevels,
+			}
+			tbl.SetLabelLevelCount(tt.args.n)
+
+			if tbl.numLabelLevels != tt.wantLevels {
+				t.Errorf("Table.SetLabelLevelCount().numLabelLevels -> %v, want %v", tbl.numLabelLevels, tt.wantLevels)
+			}
+		})
+	}
+}

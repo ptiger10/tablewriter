@@ -86,6 +86,11 @@ func (tbl *Table) SetAlignment(alignment Alignment) {
 	tbl.alignment = alignment
 }
 
+// SetLabelLevelCount sets the number of label levels to `n`.
+func (tbl *Table) SetLabelLevelCount(n int) {
+	tbl.numLabelLevels = n
+}
+
 // creates a stringified representation of content rows and dividing rows
 func (tbl *Table) render() (string, error) {
 	if len(tbl.rows) == 0 {
