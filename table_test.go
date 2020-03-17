@@ -850,24 +850,53 @@ func TestTable_MergeRepeats(t *testing.T) {
 
 func TestTable_TruncateCells(t *testing.T) {
 	type fields struct {
-		autoMerge bool
+		truncateCells bool
 	}
 	tests := []struct {
 		name         string
 		fields       fields
 		wantTruncate bool
 	}{
-		{"pass", fields{autoMerge: false}, true},
+		{"pass", fields{truncateCells: false}, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tbl := &Table{
-				autoMerge: tt.fields.autoMerge,
+				truncateCells: tt.fields.truncateCells,
 			}
 			tbl.TruncateWideCells()
 
 			if tbl.truncateCells != tt.wantTruncate {
 				t.Errorf("Table.TruncateWideCells().truncateCells -> %v, want %v", tbl.truncateCells, tt.wantTruncate)
+			}
+		})
+	}
+}
+
+func TestTable_SetAlignment(t *testing.T) {
+	type fields struct {
+		alignment Alignment
+	}
+	type args struct {
+		alignment Alignment
+	}
+	tests := []struct {
+		name          string
+		fields        fields
+		args          args
+		wantAlignment Alignment
+	}{
+		{"pass", fields{alignment: AlignCenter}, args{AlignLeft}, AlignLeft},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tbl := &Table{
+				alignment: tt.fields.alignment,
+			}
+			tbl.SetAlignment(tt.args.alignment)
+
+			if tbl.alignment != tt.wantAlignment {
+				t.Errorf("Table.SetAlignment().alignment -> %v, want %v", tbl.alignment, tt.wantAlignment)
 			}
 		})
 	}
