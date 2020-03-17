@@ -60,7 +60,7 @@ func TestTable_render(t *testing.T) {
 			"" +
 				"+-------+------+\n" +
 				"|  foo  | bar  |\n" +
-				"+=======+======+\n" +
+				"|-------|------|\n" +
 				"| corge | quux |\n" +
 				"| baz   | fred |\n" +
 				"+-------+------+\n",
@@ -90,7 +90,7 @@ func TestTable_render(t *testing.T) {
 			"" +
 				"+-------++------+\n" +
 				"|  foo  || bar  |\n" +
-				"+=======++======+\n" +
+				"|-------||------|\n" +
 				"| corge || quux |\n" +
 				"| baz   || fred |\n" +
 				"+-------++------+\n",
@@ -365,7 +365,7 @@ func Test_stringifyDividingRow(t *testing.T) {
 		{
 			"no label levels - header",
 			args{[]int{1, 3, 1}, 0, true},
-			"+===+=====+===+\n",
+			"|---|-----|---|\n",
 		},
 		{
 			"1 label level - not header",
@@ -938,46 +938,64 @@ func TestChangeDefaults(t *testing.T) {
 		args         args
 		wantDefaults Defaults
 	}{
-		{"DividingEdge", args{Defaults{DividingEdge: "*"}},
-			Defaults{DividingEdge: "*",
-				DividingLabelEdge: dividingLabelEdge, BorderFiller: borderFiller, HeaderFiller: headerFiller,
-				ContentEdge: contentEdge, LabelEdge: labelEdge, MaxColWidth: maxColWidth,
+		{"BorderEdge", args{Defaults{BorderEdge: "*"}},
+			Defaults{BorderEdge: "*",
+				BorderLabelEdge: borderLabelEdge, BorderFiller: borderFiller,
+				HeaderEdge: headerEdge, HeaderLabelEdge: headerLabelEdge, HeaderFiller: headerFiller,
+				ContentEdge: contentEdge, ContentLabelEdge: contentLabelEdge, MaxColWidth: maxColWidth,
 			},
 		},
-		{"DividingLabelEdge", args{Defaults{DividingLabelEdge: "**"}},
-			Defaults{DividingLabelEdge: "**",
-				DividingEdge: dividingEdge, BorderFiller: borderFiller, HeaderFiller: headerFiller,
-				ContentEdge: contentEdge, LabelEdge: labelEdge, MaxColWidth: maxColWidth,
+		{"BorderLabelEdge", args{Defaults{BorderLabelEdge: "**"}},
+			Defaults{BorderLabelEdge: "**",
+				BorderEdge: borderEdge, BorderFiller: borderFiller,
+				HeaderEdge: headerEdge, HeaderLabelEdge: headerLabelEdge, HeaderFiller: headerFiller,
+				ContentEdge: contentEdge, ContentLabelEdge: contentLabelEdge, MaxColWidth: maxColWidth,
 			},
 		},
 		{"BorderFiller", args{Defaults{BorderFiller: "*"}},
 			Defaults{BorderFiller: "*",
-				DividingEdge: dividingEdge, DividingLabelEdge: dividingLabelEdge, HeaderFiller: headerFiller,
-				ContentEdge: contentEdge, LabelEdge: labelEdge, MaxColWidth: maxColWidth,
+				BorderEdge: borderEdge, BorderLabelEdge: borderLabelEdge,
+				HeaderEdge: headerEdge, HeaderLabelEdge: headerLabelEdge, HeaderFiller: headerFiller,
+				ContentEdge: contentEdge, ContentLabelEdge: contentLabelEdge, MaxColWidth: maxColWidth,
+			},
+		},
+		{"HeaderEdge", args{Defaults{HeaderEdge: "*"}},
+			Defaults{HeaderEdge: "*",
+				BorderEdge: borderEdge, BorderLabelEdge: borderLabelEdge, BorderFiller: borderFiller,
+				HeaderLabelEdge: headerLabelEdge, HeaderFiller: headerFiller,
+				ContentEdge: contentEdge, ContentLabelEdge: contentLabelEdge, MaxColWidth: maxColWidth,
+			},
+		},
+		{"HeaderLabelEdge", args{Defaults{HeaderLabelEdge: "**"}},
+			Defaults{HeaderLabelEdge: "**",
+				BorderEdge: borderEdge, BorderLabelEdge: borderLabelEdge, BorderFiller: borderFiller,
+				HeaderEdge: headerEdge, HeaderFiller: headerFiller,
+				ContentEdge: contentEdge, ContentLabelEdge: contentLabelEdge, MaxColWidth: maxColWidth,
 			},
 		},
 		{"HeaderFiller", args{Defaults{HeaderFiller: "*"}},
 			Defaults{HeaderFiller: "*",
-				DividingEdge: dividingEdge, DividingLabelEdge: dividingLabelEdge, BorderFiller: borderFiller,
-				ContentEdge: contentEdge, LabelEdge: labelEdge, MaxColWidth: maxColWidth,
+				BorderEdge: borderEdge, BorderLabelEdge: borderLabelEdge, BorderFiller: borderFiller,
+				HeaderEdge: headerEdge, HeaderLabelEdge: headerLabelEdge,
+				ContentEdge: contentEdge, ContentLabelEdge: contentLabelEdge, MaxColWidth: maxColWidth,
 			},
 		},
 		{"ContentEdge", args{Defaults{ContentEdge: "*"}},
 			Defaults{ContentEdge: "*",
-				DividingEdge: dividingEdge, DividingLabelEdge: dividingLabelEdge, HeaderFiller: headerFiller, BorderFiller: borderFiller,
-				LabelEdge: labelEdge, MaxColWidth: maxColWidth,
+				BorderEdge: borderEdge, BorderLabelEdge: borderLabelEdge, HeaderFiller: headerFiller, BorderFiller: borderFiller,
+				ContentLabelEdge: contentLabelEdge, MaxColWidth: maxColWidth,
 			},
 		},
-		{"LabelEdge", args{Defaults{LabelEdge: "**"}},
-			Defaults{LabelEdge: "**",
-				DividingEdge: dividingEdge, DividingLabelEdge: dividingLabelEdge, HeaderFiller: headerFiller, BorderFiller: borderFiller,
+		{"ContentLabelEdge", args{Defaults{ContentLabelEdge: "**"}},
+			Defaults{ContentLabelEdge: "**",
+				BorderEdge: borderEdge, BorderLabelEdge: borderLabelEdge, HeaderFiller: headerFiller, BorderFiller: borderFiller,
 				ContentEdge: contentEdge, MaxColWidth: maxColWidth,
 			},
 		},
 		{"MaxColWidth", args{Defaults{MaxColWidth: 10}},
 			Defaults{MaxColWidth: 10,
-				DividingEdge: dividingEdge, DividingLabelEdge: dividingLabelEdge, HeaderFiller: headerFiller, BorderFiller: borderFiller,
-				ContentEdge: contentEdge, LabelEdge: labelEdge,
+				BorderEdge: borderEdge, BorderLabelEdge: borderLabelEdge, HeaderFiller: headerFiller, BorderFiller: borderFiller,
+				ContentEdge: contentEdge, ContentLabelEdge: contentLabelEdge,
 			},
 		},
 	}
@@ -985,11 +1003,11 @@ func TestChangeDefaults(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ChangeDefaults(tt.args.defaults)
 
-			if dividingEdge != tt.wantDefaults.DividingEdge {
-				t.Errorf("ChangeDefaults() DividingEdge -> %v, want %v", dividingEdge, tt.wantDefaults.DividingEdge)
+			if borderEdge != tt.wantDefaults.BorderEdge {
+				t.Errorf("ChangeDefaults() BorderEdge -> %v, want %v", borderEdge, tt.wantDefaults.BorderEdge)
 			}
-			if dividingLabelEdge != tt.wantDefaults.DividingLabelEdge {
-				t.Errorf("ChangeDefaults() DividingLabelEdge -> %v, want %v", dividingLabelEdge, tt.wantDefaults.DividingLabelEdge)
+			if borderLabelEdge != tt.wantDefaults.BorderLabelEdge {
+				t.Errorf("ChangeDefaults() BorderLabelEdge -> %v, want %v", borderLabelEdge, tt.wantDefaults.BorderLabelEdge)
 			}
 			if borderFiller != tt.wantDefaults.BorderFiller {
 				t.Errorf("ChangeDefaults() BorderFiller -> %v, want %v", borderFiller, tt.wantDefaults.BorderFiller)
@@ -1000,8 +1018,8 @@ func TestChangeDefaults(t *testing.T) {
 			if contentEdge != tt.wantDefaults.ContentEdge {
 				t.Errorf("ChangeDefaults() ContentEdge -> %v, want %v", contentEdge, tt.wantDefaults.ContentEdge)
 			}
-			if labelEdge != tt.wantDefaults.LabelEdge {
-				t.Errorf("ChangeDefaults() LabelEdge -> %v, want %v", labelEdge, tt.wantDefaults.LabelEdge)
+			if contentLabelEdge != tt.wantDefaults.ContentLabelEdge {
+				t.Errorf("ChangeDefaults() ContentLabelEdge -> %v, want %v", contentLabelEdge, tt.wantDefaults.ContentLabelEdge)
 			}
 			if maxColWidth != tt.wantDefaults.MaxColWidth {
 				t.Errorf("ChangeDefaults() MaxColWidth -> %v, want %v", maxColWidth, tt.wantDefaults.MaxColWidth)

@@ -92,6 +92,10 @@ func (tbl *Table) SetAlignment(alignment Alignment) {
 }
 
 // SetLabelLevelCount sets the number of label levels to `n`.
+// "Label levels" are the leftmost columns in the table, and typically have values that help identify ("label") specific rows.
+// They are often analogous to a table index.
+// Setting `n` > 0 will visually separate the label levels from the other columns in the table.
+// (Default: 0 label levels).
 func (tbl *Table) SetLabelLevelCount(n int) {
 	tbl.numLabelLevels = n
 }
@@ -198,21 +202,26 @@ func repeat(s string, n int) string {
 
 // [3,3] -> +---+---+
 func stringifyDividingRow(colWidths []int, numLabelLevels int, header bool) string {
-	// leftmost edge
-	ret := dividingEdge
-
-	// set filler value
+	// set dividing symbol values (default: border)
+	edge := borderEdge
+	labelEdge := borderLabelEdge
 	filler := borderFiller
 	if header {
+		edge = headerEdge
+		labelEdge = headerLabelEdge
 		filler = headerFiller
 	}
+
+	// leftmost edge
+	ret := edge
+
 	for k := range colWidths {
 		// sets the number of filler symbols per column, plus a 1-space buffer on either end
 		ret += repeat(filler, 1+colWidths[k]+1)
 		if k < numLabelLevels {
-			ret += dividingLabelEdge
+			ret += labelEdge
 		} else {
-			ret += dividingEdge
+			ret += edge
 		}
 	}
 	return fmt.Sprintln(ret)
@@ -296,7 +305,7 @@ func (tbl *Table) stringifyContentRow(colWidths []int, content []string, header 
 			ret += alignString(content[k], colWidths[k], alignment)
 			// add separator after column, including at rightmost edge
 			if k < tbl.numLabelLevels {
-				ret += labelEdge
+				ret += contentLabelEdge
 			} else {
 				ret += contentEdge
 			}
