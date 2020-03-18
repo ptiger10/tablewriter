@@ -50,6 +50,23 @@ func TestTable_render(t *testing.T) {
 				"+-----+------+\n",
 			false,
 		},
+		{"no labels - header - auto merge (does not apply across header boundary)",
+			fields{
+				rows:              [][]string{{"foo", "bar"}, {"foo", "quux"}, {"baz", "quux"}},
+				alignment:         AlignLeft,
+				numHeaderRows:     1,
+				numLabelLevels:    0,
+				autoCenterHeaders: true,
+				autoMerge:         true},
+			"" +
+				"+-----+------+\n" +
+				"| foo | bar  |\n" +
+				"|-----|------|\n" +
+				"| foo | quux |\n" +
+				"| baz |      |\n" +
+				"+-----+------+\n",
+			false,
+		},
 		{"no labels - 1 header - no auto merge",
 			fields{
 				rows:              [][]string{{"foo", "bar"}, {"corge", "quux"}, {"baz", "fred"}},
