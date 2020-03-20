@@ -218,7 +218,7 @@ func stringifyDividingRow(colWidths []int, numLabelLevels int, header bool) stri
 	for k := range colWidths {
 		// sets the number of filler symbols per column, plus a 1-space buffer on either end
 		ret += repeat(filler, 1+colWidths[k]+1)
-		if k < numLabelLevels {
+		if k == numLabelLevels-1 {
 			ret += labelEdge
 		} else {
 			ret += edge
@@ -304,7 +304,7 @@ func (tbl *Table) stringifyContentRow(colWidths []int, content []string, header 
 			// align text content
 			ret += alignString(content[k], colWidths[k], alignment)
 			// add separator after column, including at rightmost edge
-			if k < tbl.numLabelLevels {
+			if k == tbl.numLabelLevels-1 {
 				ret += contentLabelEdge
 			} else {
 				ret += contentEdge

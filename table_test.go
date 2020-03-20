@@ -83,6 +83,22 @@ func TestTable_render(t *testing.T) {
 				"+-------+------+\n",
 			false,
 		},
+		{"no labels - 2 headers - no auto merge",
+			fields{
+				rows:              [][]string{{"foo", "bar"}, {"corge", "quux"}, {"baz", "fred"}},
+				alignment:         AlignLeft,
+				autoCenterHeaders: true,
+				numHeaderRows:     2,
+				numLabelLevels:    0},
+			"" +
+				"+-------+------+\n" +
+				"|  foo  | bar  |\n" +
+				"| corge | quux |\n" +
+				"|-------|------|\n" +
+				"| baz   | fred |\n" +
+				"+-------+------+\n",
+			false,
+		},
 		{"labels - no header - no auto merge",
 			fields{
 				rows:           [][]string{{"foo", "bar"}, {"corge", "quux"}, {"baz", "fred"}},
@@ -95,6 +111,19 @@ func TestTable_render(t *testing.T) {
 				"| corge || quux |\n" +
 				"| baz   || fred |\n" +
 				"+-------++------+\n",
+			false,
+		},
+		{"2 labels - no header - no auto merge",
+			fields{
+				rows:           [][]string{{"foo", "bar", "corge"}, {"quux", "baz", "fred"}},
+				alignment:      AlignLeft,
+				numHeaderRows:  0,
+				numLabelLevels: 2},
+			"" +
+				"+------+-----++-------+\n" +
+				"| foo  | bar || corge |\n" +
+				"| quux | baz || fred  |\n" +
+				"+------+-----++-------+\n",
 			false,
 		},
 		{"labels & header - no auto merge",
@@ -389,6 +418,11 @@ func Test_stringifyDividingRow(t *testing.T) {
 			args{[]int{1, 3, 1}, 1, false},
 			"+---++-----+---+\n",
 		},
+		{
+			"2 label levels - not header",
+			args{[]int{1, 3, 1}, 2, false},
+			"+---+-----++---+\n",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -479,6 +513,18 @@ func TestTable_stringifyContentRow(t *testing.T) {
 				[]int{3, 3}, []string{"foo", "bar"}, false,
 			},
 			"| foo || bar |\n",
+		},
+		{"2 label level - all rows 1 line - not header",
+			fields{
+				rows:           [][]string{{"foo", "bar", "baz"}, {"qux", "corge", "fred"}},
+				alignment:      AlignCenter,
+				numLabelLevels: 2,
+				autoMerge:      false,
+				truncateCells:  false},
+			args{
+				[]int{3, 5, 4}, []string{"foo", "bar", "baz"}, false,
+			},
+			"| foo |  bar  || baz  |\n",
 		},
 	}
 	for _, tt := range tests {
