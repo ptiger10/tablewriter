@@ -212,19 +212,20 @@ func stringifyDividingRow(colWidths []int, numLabelLevels int, header bool) stri
 		filler = headerFiller
 	}
 
+	ret := strings.Builder{}
 	// leftmost edge
-	ret := edge
+	ret.WriteString(edge)
 
 	for k := range colWidths {
 		// sets the number of filler symbols per column, plus a 1-space buffer on either end
-		ret += repeat(filler, 1+colWidths[k]+1)
+		ret.WriteString(repeat(filler, 1+colWidths[k]+1))
 		if k == numLabelLevels-1 {
-			ret += labelEdge
+			ret.WriteString(labelEdge)
 		} else {
-			ret += edge
+			ret.WriteString(edge)
 		}
 	}
-	return fmt.Sprintln(ret)
+	return fmt.Sprintln(ret.String())
 }
 
 func exceedsMaxWidth(s string, maxWidth int) bool {
@@ -270,13 +271,14 @@ func wrap(s string, maxWidth int) (firstLine string, remainder string) {
 
 // handle overly-wide columns by either wrapping or truncating.
 // if wrapping, writes multiple lines per row.
-func (tbl *Table) stringifyContentRow(colWidths []int, content []string, header bool) (ret string) {
+func (tbl *Table) stringifyContentRow(colWidths []int, content []string, header bool) string {
 	// loop until there are no remaining wrapped lines to print
+	ret := strings.Builder{}
 	for {
 		var moreWrappedLines bool
 
 		// leftmost edge
-		ret += contentEdge
+		ret.WriteString(contentEdge)
 
 		// iterate over columns
 		for k := range colWidths {
@@ -301,26 +303,26 @@ func (tbl *Table) stringifyContentRow(colWidths []int, content []string, header 
 			if header && tbl.autoCenterHeaders {
 				alignment = AlignCenter
 			}
-			// align text content
-			ret += alignString(content[k], colWidths[k], alignment)
+			// align text content and add to string
+			ret.WriteString(alignString(content[k], colWidths[k], alignment))
 			// add separator after column, including at rightmost edge
 			if k == tbl.numLabelLevels-1 {
-				ret += contentLabelEdge
+				ret.WriteString(contentLabelEdge)
 			} else {
-				ret += contentEdge
+				ret.WriteString(contentEdge)
 			}
 			// overwrite content with either wrappedLine or empty cell
 			content[k] = remainder
 		}
 		// start a new line if text is wrapped, otherwise end the loop
 		if moreWrappedLines {
-			ret += "\n"
+			ret.WriteString("\n")
 		} else {
 			break
 		}
 	}
 
-	return fmt.Sprintln(ret)
+	return fmt.Sprintln(ret.String())
 }
 
 // expects string to already be truncated or wrapped.
